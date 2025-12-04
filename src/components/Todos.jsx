@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import TodoItem from './TodoItem';
+import { getTodos, patchTodo, removeTodo } from '../services/api';
 
 export default function Todos() {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadTodos(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const loadTodos = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/todos');
-      const data = await res.json();
+      const data = await getTodos();
       setTodos(data);
-    } catch (err) {
-      alert('Error al cargar los todos');
     } finally {
       setLoading(false);
     }
@@ -22,45 +23,24 @@ export default function Todos() {
 
   const toggleComplete = async (id, completed) => {
     try {
-      const res = await fetch(`http://localhost:3001/todos/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: !completed })
-      });
-
-      if (res.ok) {
-        setTodos(todos.map(t =>
-          t.id === id ? { ...t, completed: !completed } : t
-        ));
-      } else {
-        alert('Error actualizando');
-      }
-    } catch {
-      alert('Error de conexión');
+      const updated = await patchTodo(id, { completed: !completed });
+      setTodos(todos.map(t => t.id === id ? updated : t));
+    } catch (err) {
+      alert('Error actualizando');
     }
   };
 
   const deleteTodo = async (id) => {
     if (!window.confirm('¿Eliminar este todo?')) return;
-
     try {
-      const res = await fetch(`http://localhost:3001/todos/${id}`, {
-        method: 'DELETE'
-      });
-
-      if (res.ok) {
-        setTodos(todos.filter(t => t.id !== id));
-      } else {
-        alert('Error al eliminar');
-      }
-    } catch {
-      alert('Error de conexión');
+      await removeTodo(id);
+      setTodos(todos.filter(t => t.id !== id));
+    } catch (err) {
+      alert('Error eliminando');
     }
   };
 
-
   if (loading) return <div>Cargando todos...</div>;
-  
 
   return (
     <div>
@@ -72,21 +52,12 @@ export default function Todos() {
       ) : (
         <ul>
           {todos.map(t => (
-            <li key={t.id}>
-              <input
-                type="checkbox"
-                checked={t.completed}
-                onChange={() => toggleComplete(t.id, t.completed)}
-              />
-
-              <span style={{ textDecoration: t.completed ? 'line-through' : 'none' }}>
-                {t.title}
-              </span>
-
-              <button onClick={() => deleteTodo(t.id)}>
-                Eliminar
-              </button>
-            </li>
+            <TodoItem
+              key={t.id}
+              todo={t}
+              onToggle={toggleComplete}
+              onDelete={deleteTodo}
+            />
           ))}
         </ul>
       )}
