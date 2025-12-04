@@ -58,7 +58,9 @@ export default function Todos() {
     }
   };
 
+
   if (loading) return <div>Cargando todos...</div>;
+  
 
   return (
     <div>
