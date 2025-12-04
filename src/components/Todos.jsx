@@ -38,6 +38,20 @@ export default function Todos() {
     }
   };
 
+  const deleteTodo = async (id) => {
+  if (!window.confirm('¿Eliminar este todo?')) return;
+  try {
+    const res = await fetch(`http://localhost:3001/todos/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      setTodos(todos.filter(t => t.id !== id));
+    } else {
+      alert('Error al eliminar');
+    }
+  } catch (err) {
+    alert('Error de conexión');
+  }
+};
+
   if (loading) return <div>Cargando todos...</div>;
 
   return (
@@ -52,6 +66,7 @@ export default function Todos() {
               <span style={{ textDecoration: t.completed ? 'line-through' : 'none' }}>{t.title}</span>
             </li>
           ))}
+          <button onClick={() => deleteTodo(t.id)}>Eliminar</button>
         </ul>
       )}
     </div>
